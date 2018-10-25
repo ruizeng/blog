@@ -31,7 +31,7 @@ bar();
 
 ## 代码封装
 
-上面的示例代码中我们可以看到，有几个变量（函数）是浏览器不存在的。他们是`module`，`exports`，`require`，那么模块化工具首先需要实现这几个变量并添加到模块代码中，以`foo.js`为例，包装后的代码可能如下：
+上面的示例代码中我们可以看到，有几个变量（函数）是浏览器不存在的。他们是`module`，`exports`，`require`，那么模块化工具首先需要实现这几个变量并添加到模块代码中，以`foo.js`为例，包装后的代码可能如下：
 
 ``` javascript
 
@@ -44,9 +44,9 @@ module.exports = function() {
 );
 
 ```
-然后再实现好关键的`define`和`require`两个函数，就可以实现基本的模块代码封装了。这里我们思路也很简单，定一个全局对象存储模块名到具体模块实现代码的映射，这样:
+然后再实现好关键的`define`和`require`两个函数，就可以实现基本的模块代码封装了。这里我们思路也很简单，定一个全局对象存储模块名到具体模块实现代码的映射，这样:
 * `define`函数就负责根据模块名将模块代码加载到该全局对象。
-* `require`函数负责从模块映射中查找模块代码并将其exports的变量返回给引用模块。
+* `require`函数负责从模块映射中查找模块代码并将其exports的变量返回给引用模块。
 
 ``` javascript
 var modules = {
@@ -59,7 +59,7 @@ function define(name, fn) {
 
 function require(name) {
     var mod = modules[name];
-    if (!mod) throw new Error('failed to require "' + p + '"');
+    if (!mod) throw new Error('failed to require "' + name + '"');
     if (!mod.exports) {
         mod.exports = {};
         mod.call(mod.exports, 
@@ -113,14 +113,14 @@ bar();
 require('./main.js')
 ```
 
-哇，就是这么简单，就实现了模块封装的核心思想，No more magic :-）
+哇，就是这么简单，就实现了模块封装的核心思想，No more magic :-）
 
 ## 依赖管理
 
 上面的代码有两个重要问题没有得到很好的解决：
 
-1. 我们引用模块的时候很多时候都是采用相对路径，不同模块甚至不在同一个目录，怎么区分呢?
-2. 假如模块并没有引用，我们也都打进bundle岂不是浪费么？
+1. 我们引用模块的时候很多时候都是采用相对路径，不同模块甚至不在同一个目录，怎么区分呢？
+2. 假如模块并没有引用，我们也都打进bundle岂不是浪费么？
 
 
 # 扩展模块的边界
