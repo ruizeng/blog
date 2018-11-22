@@ -117,15 +117,67 @@ require('./main.js')
 
 ## 依赖管理
 
-上面的代码有两个重要问题没有得到很好的解决：
+上面的代码有几个重要问题没有得到很好的解决：
 
 1. 我们引用模块的时候很多时候都是采用相对路径，不同模块甚至不在同一个目录，怎么区分呢？
 2. 假如模块并没有引用，我们也都打进bundle岂不是浪费么？
+3. 如果一个模块被多个模块引用，怎么避免被重复打包？
 
+所以打包工具还要去分析模块间的引用关系，在进行代码封装前，先解析出如下所示的依赖关系，一般称作依赖图。
+
+![模块依赖图](images/webpack.001.jpeg)
+
+这里的解析方法也比较简单，从我们的入口文件（一个或多个）开始分析其require，通过递归（深度优先）或者迭代（广度优先），最终遍历出完整的依赖关系图。
+
+1. 对于上面说的第一个问题，在遍历相对路径的过程中可能会将模块路径先转换为绝对路径，并给模块分配一个唯一的id以示区分。
+2. 对于没有引用的模块，可以看到并不会被遍历到，所以不需要打包。
+3. 由于遍历时我们给模块分配了唯一id（如模块文件绝对路径或文件hash值），如果模块已经被标记我们也不会重复遍历。
 
 # 扩展模块的边界
-前面的这些模块化工具之解决了js代码的模块化，但是在前端项目中，我们除了js还有各种其他资源，如html模板、css代码、甚至一些json配置文件、图片等，如果能把这些资源都通过类似模块的方式管理起来，岂不美哉？Webpack就是基于这个（创新的）想法应运而生了！
+前面的这些模块化工具之解决了js代码的模块化，但是在前端项目中，我们除了js还有各种其他资源，如html模板、css代码、甚至一些json配置文件、图片等，如果能把这些资源都通过类似模块的方式管理起来，岂不美哉？Webpack就是基于这个（创新的）想法应运而生了！下图是Webpack官网的宣传图，比较形象：
 
-# 核心概念及实现
+![模块依赖图](images/webpack.png)
 
-# HMR及webpack-dev-server
+为此，对于以上的模块化的扩充，webpack提出了Loader的概念来实现：
+
+由于模块本身只支持JavaScript，Webpack的loader相当于一个中间层，一个loader可以接收一种指定类型的文件，将其转化为js模块以供其他js模块使用。
+
+![模块依赖图](images/webpack.002.jpeg)
+
+Webpack官方以及非官方提供了几十上百种Loader，可以将各种类型的文件都转换成js模块来使用，这也是Webpack最好用的特性之一。
+
+这里以一个比较简单的Loader `json-loader` 源码为例，我们可以看到一个Loader是如何实现的:
+
+``` javascript
+// 所谓 loader 只是一个导出为函数的 JavaScript 模块。loader runner 会调用这个函数，然后把上一个 loader 产生的结果或者资源文件(resource file)传入进去
+module.exports = function (source) {
+  // 参数source是文件的字符串内容，Webpack会读取后传给Loader
+
+  if (this.cacheable) this.cacheable();
+  // 函数的 this 上下文将由 webpack 绑定，在this可以访问到很多实用的方法;
+  // 比如this.cacheable告诉webpack此模块是可以缓存的，通过缓存可提高编译效率
+
+  var value = typeof source === "string" ? JSON.parse(source) : source;
+  // 将JSON字符串解析为js对象
+
+  value = JSON.stringify(value)
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+  // 去掉JSON字符串文本中的特殊字符（行分隔符、段落分隔符）避免JS解释器解析失败
+
+  return `module.exports = ${value}`;
+  // loader 返回的是可执行的JS字符串，和js模块文件相同格式
+}
+```
+
+当然这是最简单的loader，Wepback官方和第三方提供了很多不同的loader，甚至可支持链式传递等特性，实现loader的复用。具体Loader的实现和使用本文就不做深入了。
+
+# Plugin
+
+有了强大的Loader，我们实现了泛模块，即一切皆是模块，然而这还不够。Loader的行为被定义的比较固定：接受某种类型文件输入->转换成JS模块。但是很多时候我们想做更多事情，比如分析打包文件资源大小，执行某些自动化任务等，单单靠Loader这个东东是不够的。所以Webpack引入了Plugin的概念，可以在编译过程的任何环境插入自己的逻辑进行定制化处理。
+
+
+# HMR（热模块替换）及webpack-dev-server
+
+
+# 性能优化
