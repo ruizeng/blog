@@ -125,7 +125,7 @@ require('./main.js')
 
 所以打包工具还要去分析模块间的引用关系，在进行代码封装前，先解析出如下所示的依赖关系，一般称作依赖图。
 
-![模块依赖图](images/webpack.001.jpeg)
+![模块依赖图](images/dependencies.jpg)
 
 这里的解析方法也比较简单，从我们的入口文件（一个或多个）开始分析其require，通过递归（深度优先）或者迭代（广度优先），最终遍历出完整的依赖关系图。
 
@@ -134,15 +134,15 @@ require('./main.js')
 3. 由于遍历时我们给模块分配了唯一id（如模块文件绝对路径或文件hash值），如果模块已经被标记我们也不会重复遍历。
 
 # 扩展模块的边界
-前面的这些模块化工具之解决了js代码的模块化，但是在前端项目中，我们除了js还有各种其他资源，如html模板、css代码、甚至一些json配置文件、图片等，如果能把这些资源都通过类似模块的方式管理起来，岂不美哉？Webpack就是基于这个（创新的）想法应运而生了！下图是Webpack官网的宣传图，比较形象：
+前面的这些模块化工具之解决了js代码的模块化，但是在前端项目中，我们除了js还有各种其他资源，如html模板、css代码、甚至一些json配置文件、图片等，如果能把这些资源都通过类似模块的方式管理起来，岂不美哉？Webpack就是基于这个（创新的）想法应运而生了！
 
-![模块依赖图](images/webpack.png)
+![webpack](images/webpack.jpg)
 
 为此，对于以上的模块化的扩充，webpack提出了Loader的概念来实现：
 
 由于模块本身只支持JavaScript，Webpack的loader相当于一个中间层，一个loader可以接收一种指定类型的文件，将其转化为js模块以供其他js模块使用。
 
-![模块依赖图](images/webpack.002.jpeg)
+![loader](images/loader.jpg)
 
 Webpack官方以及非官方提供了几十上百种Loader，可以将各种类型的文件都转换成js模块来使用，这也是Webpack最好用的特性之一。
 
@@ -185,13 +185,75 @@ module.exports = function (source) {
 
 具体接口和Hook可以参考[这里](https://www.webpackjs.com/api/compiler-hooks/)和[这里](https://webpack.js.com/api/compilation-hooks/)。
 
-还是以一个简单的插件-（ProgressPlugin）为例，说明插件写法：
+还是以一个简单的插件-（FileListPlugin）为例，说明插件写法：
 ``` javascript
+class FileListPlugin {
+  apply(compiler) {
+    // emit is asynchronous hook, tapping into it using tapAsync, you can use tapPromise/tap(synchronous) as well
+    compiler.hooks.emit.tapAsync('FileListPlugin', (compilation, callback) => {
+      // Create a header string for the generated file:
+      var filelist = 'In this build:\n\n';
 
+      // Loop through all compiled assets,
+      // adding a new line item for each filename.
+      for (var filename in compilation.assets) {
+        filelist += '- ' + filename + '\n';
+      }
+
+      // Insert this list into the webpack build as a new file asset:
+      compilation.assets['filelist.md'] = {
+        source: function() {
+          return filelist;
+        },
+        size: function() {
+          return filelist.length;
+        }
+      };
+
+      callback();
+    });
+  }
+}
+
+module.exports = FileListPlugin;
 ```
-
 
 # HMR（热模块替换）及webpack-dev-server
 
+早期，调试前端页面代码的经典流程是，修改代码->刷新浏览器->查看效果；针对此，Webpack提出了另一个很不错的特性：热模块替换。得益于模块化开发，由于模块（包括js代码和其他资源）被划分为一个个相对独立的单元，我们可以实现在浏览器环境中动态替换部分模块代码，就可以实现整个应用的更新，期间无需刷新页面。HMR大大提升了开发效率：对JS/CSS的代码修改可以实时在浏览器更新，并可以保留应用状态（如路由，缓存数据，当前UI状态），不像刷新浏览器，所有状态都丢失了。
+
+Webpack通过在`bundle.js`中加入HMR Runtime库，这些额外的代码能够接受模块的更新并将模块代码替换为新的版本：
+
+![hmr-runtime](images/hmr-runtime-2.jpg)
+
+需要注意的是，runtime仅仅替换掉模块代码是不够的，所有依赖被更新模块的模块，都需要被重新加载，否则热更新的函数或对象是没有被其他模块产生及时影响的。
+
+以上逻辑都是在浏览器的客户端中执行，在加上与之配合的服务器HMR server能够通知客户端代码更新。webpack官方提供的webpack-dev-server,集成了一整套工具链方便应用开发，相信很多人都用过，这里不用过多介绍了。下图是dev-server的数据流程图：
+
+![webpack-dev-server](images/webpack-dev-server.jpg)
+
+如图，webpack-dev-server主要功能：
+
+* File Server：普通的http文件服务器，用于给浏览器提供html文件以及图片、js等静态资源访问。采用内存文件系统。
+* HMR Server：接收webpack编译器的编译通知，当有更新时通知给浏览器，浏览器请求后发送模块更新数据。
+* HMR Runtime：如上文介绍，runtime接收模块更新通知并拉取更新后的chunk，将更新应用到js代码。
 
 # 性能优化
+
+webpack打包（特别是首次打包）需要扫描、分析依赖，很多Plugin还会进行大量的代码分析和计算工作（如UglifyJsPlugin）。打包的过程是非常吃CPU的，这也是为什么我们的电脑经常在webpack运行的时候嗡嗡作响😯。提升打包性能，社区也开发出一些方案，下面简单介绍下。
+
+## [Webpack cache](https://webpack.js.org/configuration/other-options/#cache)
+
+通过缓存打包过程中的中间chunk文件，可以避免未经修改的模块被重复打包。不过此配置只用于watch模式的增量更新。但对于从头开始的编译并无法作用，所以很多时候只用于开发场景。
+
+## [HappyPack](https://github.com/amireh/happypack)
+
+用于NodeJS的单进程模型，应对CPU负载型应用很容易出现单核运算瓶颈。HappyPack的核心思想是利用多进程模型，将编译和打包任务分配各多个绑定到不同核心运行的编译任务，从而利用多核优势。
+
+## [Dll](https://webpack.js.org/plugins/dll-plugin/)
+
+如果有很大一部分代码（特别是核心依赖库、node_modules这种）极少被改变，每次都重复编译，岂不是白白浪费了很多重复工作量？DllPlugin的想法是将不长变得代码另外单独打包成一个被称为dll的bundle，并包含manifest文件描述模块依赖关系。这样每次打包都忽略掉这些文件只打包经常变动的业务代码，可以大大提升打包速度。加载页面时同时加载业务bundle和dll bundle并通过manifest重建模块间关系，形成完成的模块树。
+
+## [HardSourcePlugin](https://github.com/mzgoddard/hard-source-webpack-plugin)
+
+CachePlugin因为依赖watch功能，通过watch可以实时知道具体哪个模块的源文件发生了改变，所以可能很容易进行增量编译和更新。但是对于从头编译的场景，我们并不知道哪些文件相对之前的编译时更新的，哪些是没有修改的，所以如何将编译中间cache组织起来并在再次编译时进行快速的验证成了解决这个问题的关键。HardSourcePlugin的作者深入分析的webpack的源码并进行了很多尝试，最终实现了相当高效的cache算法和方案。详情参考[这里](https://github.com/webpack/webpack/issues/250#issuecomment-240643985)。
