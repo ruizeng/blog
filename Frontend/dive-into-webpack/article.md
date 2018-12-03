@@ -46,7 +46,7 @@ module.exports = function() {
 );
 
 ```
-然后再实现好关键的`define`和`require`两个函数，就可以实现基本的模块代码封装了。这里我们思路也很简单，定一个全局对象存储模块名到具体模块实现代码的映射，这样:
+然后再实现好关键的`define`和`require`两个函数，就可以实现基本的模块代码封装了。这里我们思路也很简单，定一个全局对象存储模块名到具体模块实现代码的映射，这样:
 * `define`函数就负责根据模块名将模块代码加载到该全局对象。
 * `require`函数负责从模块映射中查找模块代码并将其exports的变量返回给引用模块。
 
@@ -142,13 +142,13 @@ require('./main.js')
 
 为此，对于以上的模块化的扩充，webpack提出了Loader的概念来实现：
 
-由于模块本身只支持JavaScript，Webpack的loader相当于一个中间层，一个loader可以接收一种指定类型的文件，将其转化为js模块以供其他js模块使用。
+由于模块本身只支持JavaScript，Webpack的loader相当于一个中间层，一个loader可以接收一种指定类型的文件，将其转化为js模块以供其他j模块使用。
 
 ![loader](images/loader.jpg)
 
-Webpack官方以及非官方提供了几十上百种Loader，可以将各种类型的文件都转换成js模块来使用，这也是Webpack最好用的特性之一。
+Webpack官方以及非官方提供了几十上百种Loader，可以将各种类型的文件都转换成js模块来使用，这也是Webpack最好用的特性之一。
 
-这里以一个比较简单的Loader `json-loader` 源码为例，我们可以看到一个Loader是如何实现的:
+这里以一个比较简单的Loader `json-loader` 源码为例，我们可以看到一个Loader是如何实现的:
 
 ``` javascript
 // 所谓 loader 只是一个导出为函数的 JavaScript 模块。loader runner 会调用这个函数，然后把上一个 loader 产生的结果或者资源文件(resource file)传入进去
@@ -172,15 +172,15 @@ module.exports = function (source) {
 }
 ```
 
-当然这是最简单的loader，Wepback官方和第三方提供了很多不同的loader，甚至可支持链式传递等特性，实现loader的复用。具体Loader的实现和使用本文就不做深入了。
+当然这是最简单的loader，Wepback官方和第三方提供了很多不同的loader，甚至可支持链式传递等特性，实现loader的复用。具体Loader的实现和使用本文就不做深入了。
 
 # Plugin
 
-有了强大的Loader，我们实现了泛模块-即一切皆是模块，然而这还不够。Loader的行为被定义的比较固定：接受某种类型文件输入->转换成JS模块。但是很多时候我们想做更多事情，比如分析打包文件资源大小，执行某些自动化任务等，单单靠Loader这个东东是不够的。所以Webpack引入了Plugin的概念，可以在编译过程的任何环境插入自己的逻辑进行定制化处理。换句话说，Loader搞不定的，我们通过Plugin解决。
+有了强大的Loader，我们实现了泛模块-即一切皆是模块，然而这还不够。Loader的行为被定义的比较固定：接受某种类型文件输入->转换成JS模块。但是很多时候我们想做更多事情，比如分析打包文件资源大小，执行某些自动化任务等，单单靠Loader这个东东是不够的。所以Webpack引入了Plugin的概念，可以在编译过程的任何环境插入自己的逻辑进行定制化处理。换句话说，Loader搞不定的，我们通过Plugin解决。
 
 只要是提供apply方法的对象，就可以作为Plugin。apply方法会被webpack运行时传入compiler参数，可以直接调用webpack编译器的接口API，只要接口支持，就可以随意发挥了。
 
-我们可以看看webpack提供的compiler对象，提供了很多生命周期钩子(hook)，可供监听并进行自定义处理。在插件开发中最重要的两个资源就是 compiler 和 compilation 对象。
+我们可以看看Webpack提供的compiler对象，提供了很多生命周期钩子(hook)，可供监听并进行自定义处理。在插件开发中最重要的两个资源就是 compiler 和 compilation 对象。
 
 * compiler 对象代表了完整的 webpack 环境配置。这个对象在启动 webpack 时被一次性建立，并配置好所有可操作的设置，包括 options，loader 和 plugin。Plugin可以使用它来访问 webpack 的主环境。
 * compilation 对象代表了一次资源版本构建。当每次构建被触发时，就会创建一个新的 compilation。一个 compilation 对象表现了当前的模块资源（含依赖关系）、编译生成资源、变化的文件、以及被跟踪依赖的状态信息。compilation 对象也提供了很多关键时机的回调，以供插件做自定义处理时选择使用。
@@ -222,40 +222,40 @@ module.exports = FileListPlugin;
 
 # HMR（热模块替换）及webpack-dev-server
 
-早期，调试前端页面代码的经典流程是，修改代码->刷新浏览器->查看效果；针对此，Webpack提出了另一个很不错的特性：热模块替换。得益于模块化开发，由于模块（包括js代码和其他资源）被划分为一个个相对独立的单元，我们可以实现在浏览器环境中动态替换部分模块代码，就可以实现整个应用的更新，期间无需刷新页面。HMR大大提升了开发效率：对JS/CSS的代码修改可以实时在浏览器更新，并可以保留应用状态（如路由，缓存数据，当前UI状态），不像刷新浏览器，所有状态都丢失了。
+早期，调试前端页面代码的经典流程是，修改代码->刷新浏览器->查看效果；针对此，Webpack提出了另一个很不错的特性：热模块替换。得益于模块化开发，由于模块（包括js代码和其他资源）被划分为一个个相对独立的单元，我们可以实现在浏览器环境中动态替换部分模块代码，就可以实现整个应用的更新，期间无需刷新页面。HMR大大提升了开发效率：对JS/CSS的代码修改可以实时在浏览器更新，并可以保留应用状态（如路由，缓存数据，当前UI状态），不像刷新浏览器，所有状态都丢失了。
 
-Webpack通过在`bundle.js`中加入HMR Runtime库，这些额外的代码能够接受模块的更新并将模块代码替换为新的版本：
+Webpack通过在`bundle.js`中加入HMR Runtime库，这些额外的代码能够接受模块的更新并将模块代码替换为新的版本：
 
 ![hmr-runtime](images/hmr-runtime-2.jpg)
 
-需要注意的是，runtime仅仅替换掉模块代码是不够的，所有依赖被更新模块的模块，都需要被重新加载，否则热更新的函数或对象是没有被其他模块产生及时影响的。
+需要注意的是，runtime仅仅替换掉模块代码是不够的，所有依赖被更新模块的模块，都需要被重新加载，否则热更新的函数或对象是没有被其他模块产生及时影响的。
 
-以上逻辑都是在浏览器的客户端中执行，在加上与之配合的服务器HMR server能够通知客户端代码更新。webpack官方提供的webpack-dev-server,集成了一整套工具链方便应用开发，相信很多人都用过，这里不用过多介绍了。下图是webpack-dev-server的数据流程图：
+以上逻辑都是在浏览器的客户端中执行，在加上与之配合的服务器HMR server能够通知客户端代码更新。webpack官方提供的webpack-dev-server,集成了一整套工具链方便应用开发，相信很多人都用过，这里不用过多介绍了。下图是webpack-dev-server的数据流程图：
 
 ![webpack-dev-server](images/webpack-dev-server.jpg)
 
 如图，webpack-dev-server主要功能：
 
-* File Server：普通的http文件服务器，用于给浏览器提供html文件以及图片、js等静态资源访问。采用内存文件系统。
+* File Server：普通的http文件服务器，用于给浏览器提供html文件以及图片、js等静态资源访问。采用内存文件系统。
 * HMR Server：接收webpack编译器的编译通知，当有更新时通知给浏览器，浏览器请求后发送模块更新数据。
-* HMR Runtime：如上文介绍，runtime接收模块更新通知并拉取更新后的chunk，将更新应用到js代码。
+* HMR Runtime：如上文介绍，runtime接收模块更新通知并拉取更新后的chunk，将更新应用到js代码。
 
 # 性能优化
 
-webpack打包（特别是首次打包）需要扫描、分析依赖，很多Plugin还会进行大量的代码分析和计算工作（如UglifyJsPlugin）。打包的过程是非常吃CPU的，这也是为什么我们的电脑经常在webpack运行的时候嗡嗡作响😯。提升打包性能，社区也开发出一些方案，下面简单介绍下。
+webpack打包（特别是首次打包）需要扫描、分析依赖，很多Plugin还会进行大量的代码分析和计算工作（如UglifyJsPlugin）。打包的过程是非常吃CPU的，这也是为什么我们的电脑经常在webpack运行的时候嗡嗡作响😯。提升打包性能，社区也开发出一些方案，下面简单介绍下。
 
 ## [Webpack cache](https://webpack.js.org/configuration/other-options/#cache)
 
-通过缓存打包过程中的中间chunk文件，可以避免未经修改的模块被重复打包。不过此配置只用于watch模式的增量更新。但对于从头开始的编译并无法作用，所以很多时候只用于开发场景。
+通过缓存打包过程中的中间chunk文件，可以避免未经修改的模块被重复打包。不过此配置只用于watch模式的增量更新。但对于从头开始的编译并无法作用，所以很多时候只用于开发场景。
 
 ## [HappyPack](https://github.com/amireh/happypack)
 
-用于NodeJS的单进程模型，应对CPU负载型应用很容易出现单核运算瓶颈。HappyPack的核心思想是利用多进程模型，将编译和打包任务分配各多个绑定到不同核心运行的编译任务，从而利用多核优势。
+用于NodeJS的单进程模型，应对CPU负载型应用很容易出现单核运算瓶颈。HappyPack的核心思想是利用多进程模型，将编译和打包任务分配各多个绑定到不同核心运行的编译任务，从而利用多核优势。
 
 ## [Dll](https://webpack.js.org/plugins/dll-plugin/)
 
-如果有很大一部分代码（特别是核心依赖库、node_modules这种）极少被改变，每次都重复编译，岂不是白白浪费了很多重复工作量？DllPlugin的想法是将不长变得代码另外单独打包成一个被称为dll的bundle，并包含manifest文件描述模块依赖关系。这样每次打包都忽略掉这些文件只打包经常变动的业务代码，可以大大提升打包速度。加载页面时同时加载业务bundle和dll bundle并通过manifest重建模块间关系，形成完成的模块树。
+如果有很大一部分代码（特别是核心依赖库、node_modules这种）极少被改变，每次都重复编译，岂不是白白浪费了很多重复工作量？DllPlugin的想法是将不长变得代码另外单独打包成一个被称为dll的bundle，并包含manifest文件描述模块依赖关系。这样每次打包都忽略掉这些文件只打包经常变动的业务代码，可以大大提升打包速度。加载页面时同时加载业务bundle和dll bundle并通过manifest重建模块间关系，形成完成的模块树。
 
 ## [HardSourcePlugin](https://github.com/mzgoddard/hard-source-webpack-plugin)
 
-CachePlugin因为依赖watch功能，通过watch可以实时知道具体哪个模块的源文件发生了改变，所以可能很容易进行增量编译和更新。但是对于从头编译的场景，我们并不知道哪些文件相对之前的编译时更新的，哪些是没有修改的，所以如何将编译中间cache组织起来并在再次编译时进行快速的验证成了解决这个问题的关键。HardSourcePlugin的作者深入分析的webpack的源码并进行了很多尝试，最终实现了相当高效的cache算法和方案。详情参考[这里](https://github.com/webpack/webpack/issues/250#issuecomment-240643985)。
+CachePlugin因为依赖watch功能，通过watch可以实时知道具体哪个模块的源文件发生了改变，所以可能很容易进行增量编译和更新。但是对于从头编译的场景，我们并不知道哪些文件相对之前的编译时更新的，哪些是没有修改的，所以如何将编译中间cache组织起来并在再次编译时进行快速的验证成了解决这个问题的关键。HardSourcePlugin的作者深入分析的webpack的源码并进行了很多尝试，最终实现了相当高效的cache算法和方案。详情参考[这里](https://github.com/webpack/webpack/issues/250#issuecomment-240643985)。
